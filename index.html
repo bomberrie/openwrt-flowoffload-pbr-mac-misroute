@@ -3,51 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OpenWrt Flow Offload + PBR Mitigation | Documentation & OPKG Feed</title>
-  <meta name="description" content="Reproducer, diagnostic tooling, and firewall4 mitigation for the OpenWrt 24.10 flow offload + PBR wrong-MAC delivery routing bug.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+  <title>OpenWrt Flow Offload + PBR Mitigation | Documentation & Package Feed</title>
+  <meta name="description" content="Technical documentation, OPKG feed, and reproducer for the OpenWrt 24.10 flow offload + PBR wrong-MAC delivery bug.">
   <style>
     :root {
-      --bg: #080c14;
-      --bg-alt: #0d131f;
-      --card-bg: rgba(15, 23, 42, 0.75);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --card-hover: rgba(255, 255, 255, 0.12);
-      --accent: #38bdf8;
-      --accent-glow: rgba(56, 189, 248, 0.15);
-      --accent-2: #2dd4bf;
-      --success: #34d399;
-      --warning: #fbbf24;
-      --danger: #f87171;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --code-bg: #030712;
-      --code-border: rgba(255, 255, 255, 0.08);
-      --sidebar-width: 280px;
+      --bg: #0d1117;
+      --bg-subtle: #010409;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --border-muted: #21262d;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --success: #3fb950;
+      --danger: #f85149;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-dim: #6e7681;
+      --code-bg: #0d1117;
+      --sidebar-width: 260px;
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-      background: radial-gradient(circle at 15% 10%, #172554, #080c14 45%, #05070d 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: var(--bg);
       color: var(--text);
-      line-height: 1.65;
+      line-height: 1.6;
       display: flex;
       min-height: 100vh;
-      font-size: 15px;
+      font-size: 14px;
     }
-    a { color: var(--accent); text-decoration: none; transition: color 0.15s ease; }
-    a:hover { color: #7dd3fc; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
 
     /* Sidebar Navigation */
     .sidebar {
       width: var(--sidebar-width);
-      background: rgba(8, 12, 20, 0.85);
-      backdrop-filter: blur(16px);
-      border-right: 1px solid var(--card-border);
-      padding: 32px 20px;
+      background: var(--bg-subtle);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
       position: sticky;
       top: 0;
       height: 100vh;
@@ -57,35 +52,30 @@
       flex-shrink: 0;
     }
     .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
     }
-    .brand-logo {
-      font-size: 28px;
-      line-height: 1;
-    }
-    .brand-info h1 {
+    .brand h1 {
       margin: 0;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
+      font-size: 15px;
+      font-weight: 600;
       color: var(--text);
+      letter-spacing: -0.2px;
     }
-    .brand-info span {
+    .brand p {
+      margin: 4px 0 0;
       font-size: 12px;
-      color: var(--text-dim);
+      color: var(--text-muted);
+      line-height: 1.4;
     }
     .nav-label {
       font-size: 11px;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.05em;
       color: var(--text-dim);
-      font-weight: 700;
-      margin: 16px 0 8px 12px;
+      font-weight: 600;
+      margin: 16px 0 6px 8px;
     }
     .nav-links {
       list-style: none;
@@ -93,194 +83,174 @@
       margin: 0;
     }
     .nav-links li a {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 8px 12px;
-      border-radius: 8px;
+      display: block;
+      padding: 6px 10px;
+      border-radius: 6px;
       color: var(--text-muted);
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.15s ease;
+      font-size: 13px;
+      transition: background 0.12s, color 0.12s;
     }
     .nav-links li a:hover {
       color: var(--text);
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--border-muted);
+      text-decoration: none;
     }
     .sidebar-footer {
       margin-top: auto;
-      padding-top: 20px;
-      border-top: 1px solid var(--card-border);
-      font-size: 13px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .feed-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 11px;
+      word-break: break-all;
+      color: var(--text-muted);
+      margin-top: 6px;
     }
 
     /* Main Page Content */
     .page {
       flex: 1;
       min-width: 0;
-      padding: 0 40px 80px 40px;
-      max-width: 1100px;
+      padding: 0 40px 60px 40px;
+      max-width: 1040px;
       margin: 0 auto;
     }
 
-    /* Hero Header */
+    /* Header / Hero */
     .hero {
-      padding: 56px 0 40px;
-      border-bottom: 1px solid var(--card-border);
-      margin-bottom: 36px;
+      padding: 40px 0 28px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
     }
     .badge-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 12px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.2px;
-      border: 1px solid var(--card-border);
-      background: rgba(255, 255, 255, 0.04);
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--border-muted);
       color: var(--text-muted);
     }
-    .pill-accent {
-      background: var(--accent-glow);
-      color: var(--accent);
-      border-color: rgba(56, 189, 248, 0.3);
-    }
-    .pulsing-dot {
-      width: 7px;
-      height: 7px;
-      background-color: var(--success);
-      border-radius: 50%;
-      box-shadow: 0 0 8px var(--success);
-      display: inline-block;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+    .badge-success {
+      background: rgba(63, 185, 80, 0.15);
+      color: var(--success);
+      border-color: rgba(63, 185, 80, 0.3);
     }
     .hero h1 {
-      margin: 0 0 16px;
-      font-size: 38px;
-      font-weight: 800;
-      letter-spacing: -0.8px;
-      line-height: 1.2;
-      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      margin: 0 0 12px;
+      font-size: 28px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.4px;
+      line-height: 1.3;
     }
     .hero p {
-      margin: 0 0 24px;
-      font-size: 17px;
+      margin: 0 0 20px;
+      font-size: 15px;
       color: var(--text-muted);
-      max-width: 780px;
+      max-width: 820px;
       line-height: 1.6;
     }
     .hero-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 9px 18px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
       text-decoration: none;
+      transition: all 0.12s ease;
+      line-height: 20px;
     }
     .btn-primary {
-      background: linear-gradient(135deg, #0284c7, #0369a1);
+      background: #238636;
       color: #ffffff;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+      border: 1px solid rgba(240, 246, 252, 0.1);
     }
     .btn-primary:hover {
-      background: linear-gradient(135deg, #0369a1, #075985);
+      background: #2ea043;
       color: #ffffff;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+      text-decoration: none;
     }
     .btn-secondary {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--border-muted);
       color: var(--text);
-      border: 1px solid var(--card-border);
+      border: 1px solid var(--border);
     }
     .btn-secondary:hover {
-      background: rgba(255, 255, 255, 0.1);
-      border-color: var(--card-hover);
+      background: #30363d;
       color: #ffffff;
+      text-decoration: none;
     }
 
-    /* Cards & Layout */
+    /* Panels & Cards */
     .card {
       background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 26px 30px;
-      margin-bottom: 24px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-      backdrop-filter: blur(12px);
-      transition: border-color 0.2s;
-    }
-    .card:hover {
-      border-color: var(--card-hover);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
     }
     .card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .card-title {
       margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-      letter-spacing: -0.3px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      font-size: 17px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.2px;
     }
-    p { margin: 0 0 14px; color: var(--text-muted); }
+    p { margin: 0 0 12px; color: var(--text-muted); }
 
     /* Code Blocks */
     .code-container {
       position: relative;
-      margin: 14px 0 18px;
+      margin: 10px 0 14px;
     }
     pre {
       margin: 0;
-      padding: 14px 18px;
+      padding: 12px 14px;
       background: var(--code-bg);
-      border: 1px solid var(--code-border);
-      border-radius: 12px;
-      font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
-      font-size: 13.5px;
-      color: #e2e8f0;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      color: var(--text);
       overflow-x: auto;
-      line-height: 1.6;
+      line-height: 1.5;
     }
     code {
-      font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
-      background: rgba(255, 255, 255, 0.06);
-      padding: 2px 6px;
-      border-radius: 5px;
-      font-size: 13px;
-      color: #7dd3fc;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      background: rgba(110, 118, 129, 0.2);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--text);
     }
     pre code {
       background: none;
@@ -290,76 +260,76 @@
     }
     .copy-btn {
       position: absolute;
-      top: 8px;
-      right: 8px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      top: 6px;
+      right: 6px;
+      background: var(--border-muted);
+      border: 1px solid var(--border);
       color: var(--text-muted);
-      padding: 5px 10px;
-      border-radius: 7px;
-      font-size: 11.5px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 11px;
       cursor: pointer;
       font-weight: 500;
-      transition: all 0.15s ease;
-      backdrop-filter: blur(8px);
+      transition: all 0.12s ease;
     }
     .copy-btn:hover {
-      background: rgba(255, 255, 255, 0.16);
-      color: #ffffff;
-      border-color: rgba(255, 255, 255, 0.2);
+      background: #30363d;
+      color: var(--text);
     }
 
     /* Tabs */
     .tabs {
       display: flex;
-      gap: 8px;
-      border-bottom: 1px solid var(--card-border);
-      margin-bottom: 18px;
-      padding-bottom: 2px;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+      padding-bottom: 0;
+      overflow-x: auto;
     }
     .tab-btn {
       background: none;
-      border: none;
+      border: 1px solid transparent;
+      border-bottom: none;
       color: var(--text-muted);
-      padding: 8px 14px;
-      font-size: 13.5px;
-      font-weight: 600;
-      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px 6px 0 0;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: color 0.12s;
+      white-space: nowrap;
     }
-    .tab-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.04); }
+    .tab-btn:hover { color: var(--text); }
     .tab-btn.active {
-      color: var(--accent);
-      background: var(--accent-glow);
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--text);
+      background: var(--card-bg);
+      border-color: var(--border);
+      border-bottom: 1px solid var(--card-bg);
+      margin-bottom: -1px;
+      font-weight: 600;
     }
     .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+    .tab-content.active { display: block; }
 
-    /* Visual Comparison / Flow Diagram */
+    /* Structural Comparison Diagram */
     .diagram-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin: 18px 0;
+      gap: 14px;
+      margin: 16px 0;
     }
     .diagram-box {
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 18px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px 16px;
     }
-    .diagram-box.failure { border-color: rgba(248, 113, 113, 0.3); }
-    .diagram-box.success { border-color: rgba(52, 211, 153, 0.3); }
+    .diagram-box.failure { border-left: 3px solid var(--danger); }
+    .diagram-box.success { border-left: 3px solid var(--success); }
     .diagram-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      font-size: 14px;
-      margin-bottom: 12px;
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 10px;
     }
     .diagram-header.failure { color: var(--danger); }
     .diagram-header.success { color: var(--success); }
@@ -367,12 +337,12 @@
       list-style: none;
       padding: 0;
       margin: 0;
-      font-size: 13px;
+      font-size: 12.5px;
     }
     .step-list li {
       position: relative;
-      padding-left: 20px;
-      margin-bottom: 10px;
+      padding-left: 18px;
+      margin-bottom: 6px;
       color: var(--text-muted);
     }
     .step-list li::before {
@@ -382,95 +352,87 @@
       color: var(--text-dim);
     }
 
-    /* Tables */
+    /* Table */
     .table-wrapper {
       overflow-x: auto;
-      margin: 14px 0;
+      margin: 10px 0;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13.5px;
+      font-size: 13px;
       text-align: left;
     }
     th {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--card-border);
-      color: var(--text-dim);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
       font-weight: 600;
-      text-transform: uppercase;
-      font-size: 11px;
-      letter-spacing: 0.05em;
+      font-size: 12px;
+      background: var(--bg);
     }
     td {
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-muted);
       color: var(--text-muted);
     }
+    tr:last-child td { border-bottom: none; }
     tr:hover td {
       background: rgba(255, 255, 255, 0.02);
       color: var(--text);
     }
 
-    /* Grid Layouts */
+    /* Multi-column Grid */
     .grid-2 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
     }
 
     /* Responsive */
-    @media (max-width: 960px) {
+    @media (max-width: 900px) {
       body { flex-direction: column; }
       .sidebar {
-        position: relative;
         width: 100%;
         height: auto;
+        position: relative;
         border-right: none;
-        border-bottom: 1px solid var(--card-border);
-        padding: 20px;
+        border-bottom: 1px solid var(--border);
+        padding: 16px 20px;
       }
-      .page { padding: 0 18px 60px 18px; }
-      .hero { padding: 36px 0 28px; }
-      .hero h1 { font-size: 28px; }
+      .page { padding: 0 18px 40px 18px; }
+      .hero { padding: 24px 0 20px; }
+      .hero h1 { font-size: 24px; }
       .diagram-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
-  <!-- Sidebar Navigation -->
+  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-logo">🛡️</div>
-      <div class="brand-info">
-        <h1>Flow Offload + PBR</h1>
-        <span>OpenWrt 24.10.x Mitigation</span>
-      </div>
+      <h1>Flow Offload + PBR</h1>
+      <p>OpenWrt 24.10.x routing hotfix & reproducer</p>
     </div>
 
-    <div class="nav-label">Overview</div>
+    <div class="nav-label">Navigation</div>
     <ul class="nav-links">
-      <li><a href="#quick-install">⚡ Quick Install</a></li>
-      <li><a href="#the-bug">🔍 The Defect</a></li>
-      <li><a href="#architecture">📐 How It Works</a></li>
-      <li><a href="#downloads">📥 Downloads</a></li>
-    </ul>
-
-    <div class="nav-label">Guides & Tooling</div>
-    <ul class="nav-links">
-      <li><a href="#reproducer">🧪 Netns Reproducer</a></li>
-      <li><a href="#diagnostics">🩺 Router Diagnostics</a></li>
-      <li><a href="#manual-triage">📋 Triage Commands</a></li>
-      <li><a href="#changelog">📜 Changelog</a></li>
+      <li><a href="#quick-install">Installation</a></li>
+      <li><a href="#the-bug">Defect Analysis</a></li>
+      <li><a href="#downloads">Packages & Downloads</a></li>
+      <li><a href="#reproducer">Netns Reproducer</a></li>
+      <li><a href="#diagnostics">Diagnostics</a></li>
+      <li><a href="#manual-triage">Triage Commands</a></li>
+      <li><a href="#changelog">Changelog</a></li>
     </ul>
 
     <div class="sidebar-footer">
-      <div style="margin-bottom: 10px; font-size: 12px; color: var(--text-dim);">OPKG Feed:</div>
-      <div style="background: var(--code-bg); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--code-border); font-size: 11px; font-family: monospace; word-break: break-all; color: var(--accent);">
+      <div style="font-size: 11px; color: var(--text-dim); font-weight: 500;">OPKG FEED URL:</div>
+      <div class="feed-box">
         https://bomberrie.github.io/openwrt-flowoffload-pbr-mac-misroute/ipk
       </div>
-      <div style="margin-top: 14px; display: flex; justify-content: space-between;">
-        <a href="ipk/index.html">Direct Feed ↗</a>
+      <div style="margin-top: 12px; display: flex; justify-content: space-between; font-size: 12px;">
+        <a href="ipk/index.html">Feed Index ↗</a>
         <a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute" target="_blank" rel="noopener">GitHub ↗</a>
       </div>
     </div>
@@ -480,71 +442,67 @@
   <div class="page">
     <header class="hero">
       <div class="badge-row">
-        <span class="pill pill-accent"><span class="pulsing-dot"></span> Latest Release v0.1.4</span>
-        <span class="pill">OpenWrt 24.10.0+</span>
-        <span class="pill">firewall4 / nftables</span>
-        <span class="pill">MT7621 / PPE / SW</span>
+        <span class="badge badge-success">Release v0.1.4</span>
+        <span class="badge">OpenWrt 24.10.x</span>
+        <span class="badge">firewall4 / nftables</span>
+        <span class="badge">Software & Hardware (MT7621)</span>
       </div>
       <h1>OpenWrt Flow Offload + PBR Wrong-MAC Mitigation</h1>
       <p>
-        A selective firewall4 include and diagnostic testbed that fixes Layer-2 destination MAC misdelivery for policy-routed and NATted traffic when software or hardware flow offloading is enabled in OpenWrt 24.10.
+        A selective firewall4 include, netns reproduction lab, and diagnostic toolkit addressing Layer-2 destination MAC misdelivery for policy-routed NAT traffic when flow offloading is enabled on OpenWrt 24.10.
       </p>
       <div class="hero-actions">
-        <a href="#quick-install" class="btn btn-primary">⚡ Quick Install (v0.1.4)</a>
-        <a href="ipk/openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk" class="btn btn-secondary">📦 Download .ipk</a>
+        <a href="#quick-install" class="btn btn-primary">Install Mitigation</a>
+        <a href="ipk/openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk" class="btn btn-secondary">Download .ipk (v0.1.4)</a>
         <a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute" class="btn btn-secondary" target="_blank" rel="noopener">
-          <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-          GitHub Repository
+          View on GitHub
         </a>
       </div>
     </header>
 
     <main>
-      <!-- Quick Install Section -->
+      <!-- Quick Installation -->
       <section class="card" id="quick-install">
         <div class="card-header">
-          <h2 class="card-title">⚡ Quick Installation</h2>
+          <h2 class="card-title">Installation</h2>
         </div>
-        <p>Choose your preferred installation method on your OpenWrt router:</p>
+        <p>Choose an installation method based on your deployment workflow:</p>
 
         <div class="tabs">
-          <button class="tab-btn active" onclick="switchTab(event, 'tab-opkg')">1. OPKG Custom Feed (Recommended)</button>
-          <button class="tab-btn" onclick="switchTab(event, 'tab-ssh')">2. One-Liner SSH Hotfix</button>
-          <button class="tab-btn" onclick="switchTab(event, 'tab-manual-ipk')">3. Manual IPK Install</button>
-          <button class="tab-btn" onclick="switchTab(event, 'tab-nft')">4. Manual Drop-in .nft</button>
+          <button class="tab-btn active" onclick="switchTab(event, 'tab-opkg')">OPKG Feed (Recommended)</button>
+          <button class="tab-btn" onclick="switchTab(event, 'tab-ssh')">SSH Hotfix</button>
+          <button class="tab-btn" onclick="switchTab(event, 'tab-manual-ipk')">Manual IPK</button>
+          <button class="tab-btn" onclick="switchTab(event, 'tab-nft')">Drop-in Include</button>
         </div>
 
-        <!-- Tab 1: OPKG Feed -->
         <div id="tab-opkg" class="tab-content active">
-          <p>Add the community feed to your router's opkg configuration to install and receive automatic updates:</p>
+          <p>Add the repository feed to <code>/etc/opkg/customfeeds.conf</code> and install:</p>
           <div class="code-container">
             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
             <pre><code>echo 'src/gz flowoffloadpbr https://bomberrie.github.io/openwrt-flowoffload-pbr-mac-misroute/ipk' >> /etc/opkg/customfeeds.conf
 opkg update
 opkg install openwrt-flowoffload-pbr-mitigation</code></pre>
           </div>
-          <p style="font-size: 13px; color: var(--text-dim);">
-            ✓ Installs <code>/etc/nftables.d/99-flowoffload-pbr.nft</code> and reloads <code>firewall4</code> immediately.
+          <p style="font-size: 12.5px; color: var(--text-dim); margin-bottom: 0;">
+            The package configures <code>/etc/nftables.d/99-flowoffload-pbr.nft</code> and reloads <code>firewall4</code> automatically.
           </p>
         </div>
 
-        <!-- Tab 2: SSH Hotfix -->
         <div id="tab-ssh" class="tab-content">
-          <p>Apply the hotfix directly from your workstation to the router via SSH:</p>
+          <p>Pipe the mitigation installer directly to your router over SSH:</p>
           <div class="code-container">
             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
             <pre><code>ssh root@router 'sh -s' &lt; mitigation/apply.sh</code></pre>
           </div>
-          <p>To revert and rollback the hotfix at any time:</p>
+          <p>To revert the hotfix and restore original firewall state:</p>
           <div class="code-container">
             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
             <pre><code>ssh root@router 'sh -s' &lt; mitigation/rollback.sh</code></pre>
           </div>
         </div>
 
-        <!-- Tab 3: Manual IPK -->
         <div id="tab-manual-ipk" class="tab-content">
-          <p>Download the standalone package and install it with opkg:</p>
+          <p>Download and install the standalone package on the router:</p>
           <div class="code-container">
             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
             <pre><code>wget -O /tmp/openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk \
@@ -553,9 +511,8 @@ opkg install /tmp/openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk</code></pre>
           </div>
         </div>
 
-        <!-- Tab 4: Manual .nft -->
         <div id="tab-nft" class="tab-content">
-          <p>Create the drop-in include manually in <code>/etc/nftables.d/</code> and restart the firewall:</p>
+          <p>Manually configure the nftables include without installing packaging tools:</p>
           <div class="code-container">
             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
             <pre><code>cat &lt;&lt;'EOF' > /etc/nftables.d/99-flowoffload-pbr.nft
@@ -571,143 +528,147 @@ EOF
         </div>
       </section>
 
-      <!-- The Bug & Architecture -->
+      <!-- Defect Analysis -->
       <section class="card" id="the-bug">
         <div class="card-header">
-          <h2 class="card-title">🔍 The Routing & Flowtable Bug Explained</h2>
+          <h2 class="card-title">Defect Analysis</h2>
         </div>
         <p>
-          In OpenWrt 24.10, combining software or hardware flow offloading (e.g. MediaTek MT7621 PPE) with Policy-Based Routing (PBR) and NAT leads to a Layer-2 misrouting defect. Return packets destined for a LAN client are transmitted onto the LAN with the <strong>Ethernet destination MAC of the PBR next-hop / VPN gateway</strong> instead of the LAN client's MAC.
+          When software or hardware flow offloading (e.g., MT7621 PPE) is active, netfilter's flowtable bypasses slow-path routing once connection tracking marks a flow established. In topologies utilizing Policy-Based Routing (PBR) and NAT, the flowtable caches the Layer-2 neighbor (MAC address) observed during the forward path.
+        </p>
+        <p>
+          As a consequence, return packets addressed to local LAN clients inherit the cached neighbor of the PBR next-hop or VPN gateway, delivering the Ethernet frames to the wrong physical host where they are discarded.
         </p>
 
         <div class="diagram-grid">
           <div class="diagram-box failure">
-            <div class="diagram-header failure">❌ Without Mitigation (Buggy Flow)</div>
+            <div class="diagram-header failure">Standard Offload Behavior (Defect)</div>
             <ul class="step-list">
-              <li>Client (<code>10.0.0.2</code>) sends UDP DNS query.</li>
-              <li>PBR tags packet with <code>fwmark 0xff</code> & routes via VPN gateway.</li>
-              <li>Flowtable fast-path accelerates the flow & caches early neighbor info.</li>
-              <li>WAN/VPN reply arrives; fast-path reuses the cached VPN gateway L2 neighbor.</li>
-              <li><strong>Packet sent to LAN with VPN Gateway's MAC:</strong> LAN client drops it silently.</li>
+              <li>Client (<code>10.0.0.2</code>) sends UDP traffic.</li>
+              <li>PBR marks packet (<code>fwmark 0xff</code>) → routed via VPN gateway.</li>
+              <li>Flowtable caches fast-path forward tuple & next-hop neighbor.</li>
+              <li>Return reply arrives from WAN/VPN.</li>
+              <li><strong>Fast-path delivers packet to VPN gateway's MAC on LAN</strong>.</li>
+              <li>Client never receives response; connection times out.</li>
             </ul>
           </div>
           <div class="diagram-box success">
-            <div class="diagram-header success">✅ With Mitigation (Selective Bypass)</div>
+            <div class="diagram-header success">Mitigated Behavior (Selective Bypass)</div>
             <ul class="step-list">
-              <li>Client sends UDP DNS query with PBR mark.</li>
-              <li>Guard catches <code>meta mark != 0</code> & <code>ct status { dnat, snat }</code>.</li>
-              <li>Early <code>return</code> skips the <code>flow offload @ft</code> fast-path.</li>
-              <li>Flow remains in kernel slow path: routing & ARP/ND evaluated per-packet.</li>
-              <li><strong>Packet sent to LAN with Client's true MAC:</strong> Connection succeeds flawlessly.</li>
+              <li>Client (<code>10.0.0.2</code>) sends UDP traffic.</li>
+              <li>PBR marks packet (<code>fwmark 0xff</code>) → routed via VPN gateway.</li>
+              <li>Guard matches <code>meta mark != 0</code> or <code>ct status { dnat, snat }</code>.</li>
+              <li>Early <code>return</code> keeps marked/NATted flows off the flowtable.</li>
+              <li><strong>Packet handled in slow path: ARP & routing evaluated per-packet</strong>.</li>
+              <li>Return reply arrives at client with correct destination MAC.</li>
             </ul>
           </div>
         </div>
 
-        <p style="font-size: 13.5px; margin-top: 14px;">
-          <strong>Performance Impact:</strong> Isolated strictly to policy-routed and NATted flows. Bulk unmarked LAN ↔ WAN throughput continues to utilize full hardware/software flow offloading acceleration at wire speed.
+        <p style="font-size: 13px; color: var(--text-dim); margin-top: 14px; margin-bottom: 0;">
+          <strong>Scope:</strong> The bypass applies exclusively to marked and NATted connections. Standard unmarked LAN ↔ WAN traffic continues to traverse the hardware/software flowtable at line rate.
         </p>
       </section>
 
       <!-- Downloads Table -->
       <section class="card" id="downloads">
         <div class="card-header">
-          <h2 class="card-title">📥 Release Assets & Downloads</h2>
-          <a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute/releases" target="_blank" rel="noopener" style="font-size: 13px;">View All on GitHub ↗</a>
+          <h2 class="card-title">Packages & Release Downloads</h2>
+          <a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute/releases" target="_blank" rel="noopener" style="font-size: 12.5px;">GitHub Releases ↗</a>
         </div>
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
                 <th>Artifact</th>
-                <th>Type</th>
+                <th>Format</th>
                 <th>SHA-256 Checksum</th>
-                <th>Action</th>
+                <th>Download</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td><strong>openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk</strong></td>
-                <td><span class="pill pill-accent" style="font-size: 11px;">Latest OPKG</span></td>
+                <td><code>openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk</code></td>
+                <td>OPKG package</td>
                 <td><code style="font-size: 11px;">374954842a17...3520a11ce</code></td>
-                <td><a href="ipk/openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">Download</a></td>
+                <td><a href="ipk/openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk">Download</a></td>
               </tr>
               <tr>
-                <td><strong>openwrt-flowoffload-pbr-mitigation_0.1.4_all.deb</strong></td>
-                <td><span class="pill" style="font-size: 11px;">Debian-style</span></td>
+                <td><code>openwrt-flowoffload-pbr-mitigation_0.1.4_all.deb</code></td>
+                <td>Debian-style</td>
                 <td><code style="font-size: 11px;">374954842a17...3520a11ce</code></td>
-                <td><a href="ipk/openwrt-flowoffload-pbr-mitigation_0.1.4_all.deb" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">Download</a></td>
+                <td><a href="ipk/openwrt-flowoffload-pbr-mitigation_0.1.4_all.deb">Download</a></td>
               </tr>
               <tr>
-                <td><strong>openwrt-flowoffload-pbr-mac-misroute-v0.1.4.tar.gz</strong></td>
-                <td><span class="pill" style="font-size: 11px;">Source Archive</span></td>
+                <td><code>openwrt-flowoffload-pbr-mac-misroute-v0.1.4.tar.gz</code></td>
+                <td>Source archive</td>
                 <td><code style="font-size: 11px;">6ca03e31be1c...382f5111</code></td>
-                <td><a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute/releases/download/v0.1.4/openwrt-flowoffload-pbr-mac-misroute-v0.1.4.tar.gz" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">Download</a></td>
+                <td><a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute/releases/download/v0.1.4/openwrt-flowoffload-pbr-mac-misroute-v0.1.4.tar.gz">Download</a></td>
               </tr>
               <tr>
-                <td><strong>Packages.gz</strong></td>
-                <td><span class="pill" style="font-size: 11px;">Feed Index</span></td>
+                <td><code>Packages.gz</code></td>
+                <td>Feed index</td>
                 <td><code style="font-size: 11px;">fb6cac04842a...232d87e13</code></td>
-                <td><a href="ipk/Packages.gz" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">Download</a></td>
+                <td><a href="ipk/Packages.gz">Download</a></td>
               </tr>
               <tr>
-                <td><strong>v0.1.4.sha256</strong></td>
-                <td><span class="pill" style="font-size: 11px;">Checksums</span></td>
-                <td><code style="font-size: 11px;">Text verification file</code></td>
-                <td><a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute/releases/download/v0.1.4/v0.1.4.sha256" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">Download</a></td>
+                <td><code>v0.1.4.sha256</code></td>
+                <td>Checksum verification</td>
+                <td><code style="font-size: 11px;">Release manifest</code></td>
+                <td><a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute/releases/download/v0.1.4/v0.1.4.sha256">Download</a></td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- Reproducer & Tooling -->
+      <!-- Reproducer -->
       <section class="card" id="reproducer">
         <div class="card-header">
-          <h2 class="card-title">🧪 Network Namespace Reproducer Lab</h2>
+          <h2 class="card-title">Network Namespace Reproducer</h2>
         </div>
         <p>
-          The repository includes a self-contained 4-namespace Linux routing lab (<code>ns_client</code>, <code>ns_router</code>, <code>ns_vpngw</code>, <code>ns_wan</code>) that reproduces the topology and validates Layer-2 packet delivery on any Linux host with <code>nftables</code>:
+          A script-driven test environment using Linux network namespaces to simulate a four-node topology (client, router, VPN gateway, WAN responder). Runs on any Linux host with <code>iproute2</code>, <code>nftables</code>, and <code>tcpdump</code>:
         </p>
         <div class="code-container">
           <button class="copy-btn" onclick="copyCode(this)">Copy</button>
           <pre><code># Run lab with flow offload on and mitigation enabled:
 sudo ./reproducer/netns-lab.sh run
 
-# Run lab with mitigation disabled to observe reproduction:
+# Run lab with mitigation disabled to verify failure mode:
 sudo FLOW_OFFLOAD=1 MITIGATION=0 ./reproducer/netns-lab.sh run
 
-# Execute automated CI smoke test:
+# Execute automated CI smoke suite:
 make smoke
 
-# Tear down namespaces & clean logs:
+# Clean up namespaces and temporary logs:
 make clean</code></pre>
         </div>
       </section>
 
-      <!-- Diagnostics & Triage -->
+      <!-- Diagnostics -->
       <section class="card" id="diagnostics">
         <div class="card-header">
-          <h2 class="card-title">🩺 Router Diagnostic Collector</h2>
+          <h2 class="card-title">Diagnostics Collection</h2>
         </div>
-        <p>Gather routing tables, nftables rulesets, flowtable dumps, conntrack logs, and synchronized LAN/WAN PCAPs directly on OpenWrt:</p>
+        <p>Gather routing tables, nftables rulesets, flowtable entries, and synchronized LAN/WAN PCAP captures on OpenWrt routers:</p>
         <div class="code-container">
           <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-          <pre><code># Run collector on target router:
+          <pre><code># Transfer and execute on router:
 ./diagnostics/collect.sh
 
-# Outputs collected into:
-/tmp/offload-pbr-diag/</code></pre>
+# Artifacts output to /tmp/offload-pbr-diag/</code></pre>
         </div>
       </section>
 
-      <!-- Manual Commands -->
+      <!-- Triage Commands -->
       <section class="card" id="manual-triage">
         <div class="card-header">
-          <h2 class="card-title">📋 Manual Router Triage Commands</h2>
+          <h2 class="card-title">Router Triage Commands</h2>
         </div>
         <div class="grid-2">
           <div>
-            <p><strong>Inspect active flowtable state:</strong></p>
+            <p><strong>Inspect flowtables:</strong></p>
             <div class="code-container">
               <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               <pre><code>nft list flowtables
@@ -715,21 +676,21 @@ nft list flowtable inet filter ftoffload</code></pre>
             </div>
           </div>
           <div>
-            <p><strong>Monitor neighbor (ARP/ND) churn:</strong></p>
+            <p><strong>Check neighbor resolution:</strong></p>
             <div class="code-container">
               <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               <pre><code>ip -s neigh show</code></pre>
             </div>
           </div>
           <div>
-            <p><strong>Verify LAN L2 destination MAC:</strong></p>
+            <p><strong>Inspect LAN L2 destination MAC:</strong></p>
             <div class="code-container">
               <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               <pre><code>tcpdump -nn -e -i br-lan udp port 53</code></pre>
             </div>
           </div>
           <div>
-            <p><strong>Live packet path trace:</strong></p>
+            <p><strong>Trace netfilter rule evaluation:</strong></p>
             <div class="code-container">
               <button class="copy-btn" onclick="copyCode(this)">Copy</button>
               <pre><code>nft monitor trace</code></pre>
@@ -741,41 +702,41 @@ nft list flowtable inet filter ftoffload</code></pre>
       <!-- Changelog -->
       <section class="card" id="changelog">
         <div class="card-header">
-          <h2 class="card-title">📜 Release History</h2>
+          <h2 class="card-title">Changelog</h2>
         </div>
-        <div style="border-left: 2px solid var(--accent); padding-left: 18px; margin-left: 6px;">
-          <h3 style="margin: 0 0 4px; font-size: 15px; color: var(--text);">v0.1.4 (Latest)</h3>
-          <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 8px;">October 2026</p>
-          <ul style="margin: 0 0 18px 18px; color: var(--text-muted); font-size: 13.5px;">
+        <div style="border-left: 2px solid var(--border); padding-left: 14px; margin-left: 4px;">
+          <h3 style="margin: 0 0 2px; font-size: 14px; color: var(--text);">v0.1.4</h3>
+          <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px;">October 2026</p>
+          <ul style="margin: 0 0 16px 16px; color: var(--text-muted); font-size: 13px;">
             <li>Fixed fw4 include chain in mitigation (<code>ft</code> instead of <code>ft_pbr_guard</code>) so guards are evaluated.</li>
-            <li>Fixed rollback script rule deletion to use rule handles instead of unsupported text deletion.</li>
-            <li>Enhanced <code>apply.sh</code> to install persistent include to <code>/etc/nftables.d/</code> before firewall reload.</li>
+            <li>Fixed rollback script rule deletion to use rule handles instead of unsupported text matching.</li>
+            <li>Configured <code>apply.sh</code> to install persistent include to <code>/etc/nftables.d/</code> before firewall reload.</li>
             <li>Preserved namespaces on normal exit in <code>netns-lab.sh</code> for post-run inspection.</li>
-            <li>Fixed odd query counts in traffic generator and tightened MAC mismatch detection.</li>
-            <li>Parallelized diagnostic packet captures on LAN and WAN interfaces.</li>
+            <li>Fixed odd query counts in traffic generator and tightened MAC mismatch verification.</li>
+            <li>Parallelized diagnostic packet captures across LAN and WAN interfaces.</li>
           </ul>
 
-          <h3 style="margin: 0 0 4px; font-size: 15px; color: var(--text);">v0.1.2</h3>
-          <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 8px;">February 2026</p>
-          <ul style="margin: 0 0 18px 18px; color: var(--text-muted); font-size: 13.5px;">
+          <h3 style="margin: 0 0 2px; font-size: 14px; color: var(--text);">v0.1.2</h3>
+          <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px;">February 2026</p>
+          <ul style="margin: 0 0 16px 16px; color: var(--text-muted); font-size: 13px;">
             <li>Shortened tcpdump capture timeout to 45s and softened empty-capture handling for CI stability.</li>
             <li>Corrected flowtable name for offload-on test case.</li>
           </ul>
 
-          <h3 style="margin: 0 0 4px; font-size: 15px; color: var(--text);">v0.1.0</h3>
-          <p style="font-size: 13px; color: var(--text-dim); margin-bottom: 8px;">February 2026</p>
-          <ul style="margin: 0 0 0 18px; color: var(--text-muted); font-size: 13.5px;">
+          <h3 style="margin: 0 0 2px; font-size: 14px; color: var(--text);">v0.1.0</h3>
+          <p style="font-size: 12px; color: var(--text-dim); margin-bottom: 8px;">February 2026</p>
+          <ul style="margin: 0 0 0 16px; color: var(--text-muted); font-size: 13px;">
             <li>Initial release with netns reproducer, diagnostics collector, and firewall4 include hotfix.</li>
           </ul>
         </div>
       </section>
 
-      <footer style="margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--card-border); display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-dim); flex-wrap: wrap; gap: 12px;">
+      <footer style="margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-dim); flex-wrap: wrap; gap: 8px;">
         <div>
           Maintained by <a href="https://github.com/bomberrie" target="_blank" rel="noopener">bomberrie</a> · OpenWrt Flow Offload + PBR Research
         </div>
         <div>
-          <a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute/issues" target="_blank" rel="noopener">Report Issue ↗</a>
+          <a href="https://github.com/bomberrie/openwrt-flowoffload-pbr-mac-misroute/issues" target="_blank" rel="noopener">Report an Issue ↗</a>
         </div>
       </footer>
     </main>
@@ -788,14 +749,12 @@ nft list flowtable inet filter ftoffload</code></pre>
       const text = code.innerText;
       navigator.clipboard.writeText(text).then(() => {
         const orig = btn.innerText;
-        btn.innerText = 'Copied!';
-        btn.style.color = '#34d399';
-        btn.style.borderColor = '#34d399';
+        btn.innerText = 'Copied';
+        btn.style.color = '#3fb950';
         setTimeout(() => {
           btn.innerText = orig;
           btn.style.color = '';
-          btn.style.borderColor = '';
-        }, 2000);
+        }, 1800);
       });
     }
 

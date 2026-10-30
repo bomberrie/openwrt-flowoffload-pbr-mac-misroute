@@ -3,66 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OPKG Feed Artifacts | OpenWrt Flow Offload + PBR Mitigation</title>
+  <title>OPKG Feed Artifacts | OpenWrt Flow Offload + PBR</title>
   <style>
     :root {
-      --bg: #090d16;
-      --card-bg: rgba(17, 24, 39, 0.85);
-      --border: rgba(255, 255, 255, 0.08);
-      --accent: #38bdf8;
-      --accent-hover: #7dd3fc;
-      --success: #34d399;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --code-bg: #030712;
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: #30363d;
+      --border-muted: #21262d;
+      --accent: #58a6ff;
+      --accent-hover: #79c0ff;
+      --success: #3fb950;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --code-bg: #0d1117;
     }
     * { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: radial-gradient(ellipse 80% 80% at 50% -20%, #1e293b, #090d16);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      background: var(--bg);
       color: var(--text);
       margin: 0;
       padding: 40px 20px;
       min-height: 100vh;
+      font-size: 14px;
       display: flex;
       justify-content: center;
       align-items: flex-start;
     }
     .container {
       width: 100%;
-      max-width: 760px;
+      max-width: 720px;
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.05);
-      backdrop-filter: blur(12px);
+      border-radius: 8px;
+      padding: 24px 28px;
     }
     .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(56, 189, 248, 0.1);
-      color: var(--accent);
-      padding: 4px 12px;
-      border-radius: 9999px;
-      font-size: 13px;
-      font-weight: 600;
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: var(--border-muted);
+      color: var(--text-muted);
       margin-bottom: 12px;
     }
     h1 {
       margin: 0 0 8px 0;
-      font-size: 26px;
-      font-weight: 700;
-      background: linear-gradient(135deg, #f8fafc, #94a3b8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size: 20px;
+      font-weight: 600;
+      color: #ffffff;
+      letter-spacing: -0.2px;
     }
     p {
       color: var(--text-muted);
-      margin: 0 0 20px 0;
-      font-size: 15px;
+      margin: 0 0 16px 0;
       line-height: 1.5;
     }
     .code-box {
@@ -71,37 +67,38 @@
       justify-content: space-between;
       background: var(--code-bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 14px;
+      border-radius: 6px;
+      padding: 8px 12px;
       margin-bottom: 24px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 13.5px;
-      color: #38bdf8;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      color: var(--text);
       overflow-x: auto;
     }
     .btn-copy {
-      background: rgba(255, 255, 255, 0.06);
+      background: var(--border-muted);
       border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 12px;
-      border-radius: 6px;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 5px;
       cursor: pointer;
       font-size: 12px;
       font-weight: 500;
-      transition: all 0.15s ease;
       white-space: nowrap;
       margin-left: 10px;
+      transition: all 0.12s;
     }
     .btn-copy:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.2);
+      background: #30363d;
+      color: var(--text);
     }
     h2 {
-      font-size: 18px;
+      font-size: 15px;
       font-weight: 600;
-      margin: 24px 0 12px 0;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 8px;
+      color: #ffffff;
+      margin: 20px 0 10px 0;
+      border-bottom: 1px solid var(--border-muted);
+      padding-bottom: 6px;
     }
     ul {
       list-style: none;
@@ -112,20 +109,16 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 12px;
-      border-radius: 8px;
-      transition: background 0.15s;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
     }
     li:hover {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255, 255, 255, 0.02);
     }
     a {
       color: var(--accent);
       text-decoration: none;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
     }
     a:hover {
       color: var(--accent-hover);
@@ -133,20 +126,20 @@
     }
     .tag {
       font-size: 11px;
-      padding: 2px 8px;
+      padding: 2px 6px;
       border-radius: 4px;
-      background: rgba(52, 211, 153, 0.15);
+      background: rgba(63, 185, 80, 0.15);
       color: var(--success);
-      font-weight: 600;
-      border: 1px solid rgba(52, 211, 153, 0.25);
+      font-weight: 500;
+      border: 1px solid rgba(63, 185, 80, 0.3);
     }
     .footer-link {
-      margin-top: 28px;
-      padding-top: 16px;
-      border-top: 1px solid var(--border);
+      margin-top: 24px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-muted);
       display: flex;
       justify-content: space-between;
-      font-size: 14px;
+      font-size: 13px;
     }
   </style>
 </head>
@@ -154,29 +147,29 @@
   <div class="container">
     <div class="badge">OpenWrt Package Feed</div>
     <h1>Flow Offload + PBR Mitigation Feed</h1>
-    <p>Add this feed URL to your OpenWrt router's <code>/etc/opkg/customfeeds.conf</code> to install and receive updates.</p>
+    <p>Add this feed URL to <code>/etc/opkg/customfeeds.conf</code> on your OpenWrt router:</p>
 
     <div class="code-box">
       <span id="feed-url">src/gz flowoffloadpbr https://bomberrie.github.io/openwrt-flowoffload-pbr-mac-misroute/ipk</span>
-      <button class="btn-copy" onclick="copyFeed()">Copy Feed</button>
+      <button class="btn-copy" onclick="copyFeed()">Copy</button>
     </div>
 
     <h2>Current Release (v0.1.4)</h2>
     <ul>
       <li>
-        <a href="openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk">📦 openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk</a>
+        <a href="openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk">openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk</a>
         <span class="tag">Latest (all)</span>
       </li>
       <li>
-        <a href="openwrt-flowoffload-pbr-mitigation_0.1.4_all.deb">📦 openwrt-flowoffload-pbr-mitigation_0.1.4_all.deb</a>
-        <span class="tag">Debian-style</span>
+        <a href="openwrt-flowoffload-pbr-mitigation_0.1.4_all.deb">openwrt-flowoffload-pbr-mitigation_0.1.4_all.deb</a>
+        <span class="tag">Debian</span>
       </li>
     </ul>
 
     <h2>Feed Metadata</h2>
     <ul>
-      <li><a href="Packages">📄 Packages</a> (plain text index)</li>
-      <li><a href="Packages.gz">📦 Packages.gz</a> (compressed feed index)</li>
+      <li><a href="Packages">Packages</a> (plain text index)</li>
+      <li><a href="Packages.gz">Packages.gz</a> (compressed feed index)</li>
     </ul>
 
     <h2>Previous Releases</h2>
@@ -198,14 +191,12 @@
       navigator.clipboard.writeText(text).then(() => {
         const btn = document.querySelector('.btn-copy');
         const orig = btn.innerText;
-        btn.innerText = 'Copied!';
-        btn.style.borderColor = '#34d399';
-        btn.style.color = '#34d399';
+        btn.innerText = 'Copied';
+        btn.style.color = '#3fb950';
         setTimeout(() => {
           btn.innerText = orig;
-          btn.style.borderColor = '';
           btn.style.color = '';
-        }, 2000);
+        }, 1800);
       });
     }
   </script>
