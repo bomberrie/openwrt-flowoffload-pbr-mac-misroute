@@ -36,3 +36,16 @@ Size: 1818
 MD5Sum: d4bba6c38cde664e1e8d9f1f7b9d2965
 SHA256sum: 1b9f533b384c7265500a072bb6499e9f2f7c175ebfb94cf4548dff833e0f1871
 
+
+Package: openwrt-flowoffload-pbr-mitigation
+Version: 0.1.4
+Architecture: all
+Maintainer: openwrt-flowoffload-pbr maintainers
+Section: net
+Priority: optional
+Description: OpenWrt firewall4 flow offload guard for PBR/NAT traffic
+Filename: openwrt-flowoffload-pbr-mitigation_0.1.4_all.ipk
+Size: 1900
+MD5Sum: adc1bbbf1086c48ca7bdea9d166dda6b
+SHA256sum: 374954842a17a36411ae63c534ad0164dc36718069d69de2ebebe4d3520a11ce
+
