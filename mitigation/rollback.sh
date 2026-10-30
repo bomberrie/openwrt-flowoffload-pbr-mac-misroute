@@ -1,32 +1,45 @@
 #!/usr/bin/env sh
-set -euo pipefail
+set -eu
 
 # Removes flow offload guard rules added by mitigation/apply.sh
 
 RULESET="inet fw4 ft"
 MARK_RULE="meta mark != 0 return"
 NAT_RULE="ct status { dnat, snat } return"
+NFT_INCLUDE="/etc/nftables.d/99-flowoffload-pbr.nft"
 
 log() { echo "[rollback] $*"; }
 
 remove_rule() {
   local rule="$1"
-  if nft list chain $RULESET 2>/dev/null | grep -F "$rule" >/dev/null 2>&1; then
-    nft delete rule $RULESET $rule
-    log "removed: $rule"
-  else
-    log "not present: $rule"
+  local handle
+  handle=$(nft -a list chain $RULESET 2>/dev/null | grep -F "$rule" | sed -n 's/.*handle \([0-9]\+\).*/\1/p' | head -n1)
+  while [ -n "$handle" ]; do
+    nft delete rule $RULESET handle "$handle"
+    log "removed: $rule (handle $handle)"
+    handle=$(nft -a list chain $RULESET 2>/dev/null | grep -F "$rule" | sed -n 's/.*handle \([0-9]\+\).*/\1/p' | head -n1)
+  done
+}
+
+remove_persistent_include() {
+  if [ -f "$NFT_INCLUDE" ]; then
+    rm -f "$NFT_INCLUDE"
+    log "removed persistent include: $NFT_INCLUDE"
   fi
 }
 
 main() {
-  if ! nft list chain inet fw4 ft >/dev/null 2>&1; then
-    log "fw4 ft chain missing; nothing to rollback"
-    exit 0
+  remove_persistent_include
+  if nft list chain inet fw4 ft >/dev/null 2>&1; then
+    remove_rule "$MARK_RULE"
+    remove_rule "$NAT_RULE"
+  else
+    log "fw4 ft chain missing; skipped rule removal"
   fi
-  remove_rule "$MARK_RULE"
-  remove_rule "$NAT_RULE"
-  /etc/init.d/firewall reload || /etc/init.d/firewall restart || true
+
+  if [ -x /etc/init.d/firewall ]; then
+    /etc/init.d/firewall reload || /etc/init.d/firewall restart || true
+  fi
   log "rollback complete"
 }
 

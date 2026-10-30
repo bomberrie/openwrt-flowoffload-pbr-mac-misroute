@@ -48,7 +48,7 @@ ssh root@router 'sh -s' < mitigation/rollback.sh
 
 To build and install via `ipk` package:
 1. Build on a Linux host: `./scripts/build-ipk.sh` (uses latest git tag; override with `VERSION=0.1.0`).
-2. Transfer and install: `scp dist/openwrt-flowoffload-pbr-mitigation_<ver>_all.ipk root@router:/tmp && ssh root@router opkg install /tmp/openwrt-flowoffload-pbr-mitigation_<ver>_all.ipk`.
+2. Transfer and install: `scp dist/ipk/openwrt-flowoffload-pbr-mitigation_<ver>_all.ipk root@router:/tmp && ssh root@router opkg install /tmp/openwrt-flowoffload-pbr-mitigation_<ver>_all.ipk`.
 
 Installation automatically reloads `firewall4` to apply the include. Removing the package drops the rules.
 
@@ -60,7 +60,7 @@ To debug on OpenWrt hardware, install the required packages: `opkg update && opk
 
 Manual triage commands:
 * Trace packet path: `sudo nft monitor trace`
-* Inspect flowtable state: `sudo nft list flowtable inet filter ftoffload`
+* Inspect flowtable state: `sudo nft list flowtable inet filter ftoffload` (or `sudo nft list flowtables`)
 * Monitor ARP/ND churn: `sudo ip -s neigh show`
 * Capture LAN L2 headers: `sudo tcpdump -nn -e -i br-lan udp port 53`
 * Watch conntrack events: `sudo conntrack -E -p udp`

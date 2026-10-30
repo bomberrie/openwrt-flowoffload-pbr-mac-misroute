@@ -209,7 +209,7 @@ generate_traffic() {
   ip netns exec "${NS_C}" python3 - <<PY
 import socket, threading, time
 server=("${WAN_IP}", ${DNS_PORT})
-payloads=[b"A-query", b"AAAA-query"] * (${DNS_QUERIES}//2)
+payloads=([b"A-query", b"AAAA-query"] * ((${DNS_QUERIES} + 1)//2))[:${DNS_QUERIES}]
 
 def send(payload):
     s=socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -267,7 +267,16 @@ capture_mac_checks() {
   log "expected client MAC: ${expected_mac}"
   log "observed destination MACs on LAN egress: ${observed_mac:-none}"
 
-  if echo "${observed_mac}" | grep -qi "${expected_mac}"; then
+  local mismatch=0
+  while IFS= read -r mac; do
+    [ -z "$mac" ] && continue
+    if ! echo "$mac" | grep -qi "^${expected_mac}$"; then
+      log "unexpected destination MAC observed: ${mac}"
+      mismatch=1
+    fi
+  done <<< "${observed_mac}"
+
+  if [ "${mismatch}" -eq 0 ] && [ -n "${observed_mac}" ]; then
     log "MAC delivery OK (matches client)"
     return 0
   else
@@ -297,7 +306,8 @@ run_lab() {
   configure_router
   install_nft_rules
   start_dns_server
-  trap cleanup INT TERM EXIT
+  trap cleanup INT TERM
+  trap stop_dns_server EXIT
 
   # small delay for routes to settle
   sleep 1

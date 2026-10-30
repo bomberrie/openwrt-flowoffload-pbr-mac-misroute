@@ -2,8 +2,7 @@
 # Place in /etc/nftables.d/99-flowoffload-pbr.nft or load via mitigation/apply.sh
 
 table inet fw4 {
-  chain ft_pbr_guard {
-    # This chain is intended to be jump-called from the existing fw4 ft chain.
+  chain ft {
     meta mark != 0 counter return
     ct status { dnat, snat } counter return
   }
